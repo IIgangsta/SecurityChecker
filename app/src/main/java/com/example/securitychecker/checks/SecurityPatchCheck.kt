@@ -1,7 +1,9 @@
 package com.example.securitychecker.checks
 
 import android.content.Context
+import android.content.Intent
 import android.os.Build
+import android.provider.Settings
 import com.example.securitychecker.models.CheckResult
 import com.example.securitychecker.models.CheckStatus
 import java.text.SimpleDateFormat
@@ -14,15 +16,14 @@ object SecurityPatchCheck {
         val title = "Патч безопасности"
 
         if (patch.isNullOrBlank() || patch == "unknown") {
-            return CheckResult("patch", title, CheckStatus.RED, "Не удалось определить дату патча.")
+            return CheckResult("patch", title, CheckStatus.RED, "Не удалось определить дату патча.", fixIntent = Intent(Settings.ACTION_SECURITY_SETTINGS))
         }
 
         val date = try { SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(patch) } catch (e: Exception) { null }
-        if (date == null) return CheckResult("patch", title, CheckStatus.YELLOW, "Формат даты: $patch")
+        if (date == null) return CheckResult("patch", title, CheckStatus.YELLOW, "Формат даты: $patch", fixIntent = Intent(Settings.ACTION_SECURITY_SETTINGS))
 
         val months = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - date.time) / 30.0
         
-        // Если в настройках дата новее, значит производитель не обновил системный API
         val summary = when {
             months < 6.0  -> "Патч от $patch — свежий."
             months < 12.0 -> "Патчу от $patch уже %.1f мес. Обновите систему, если доступно.".format(months)
@@ -35,6 +36,10 @@ object SecurityPatchCheck {
             else          -> CheckStatus.RED
         }
 
-        return CheckResult("patch", title, status, summary)
+        // Кнопка "Пропустить" (для старых телефонов без обновлений)
+        val fixLabel = if (months >= 12.0) "Пропустить (нет обновлений)" else "Исправить"
+        val fixIntent = if (months >= 12.0) Intent(Settings.ACTION_DEVICE_INFO_SETTINGS) else Intent(Settings.ACTION_SECURITY_SETTINGS)
+
+        return CheckResult("patch", title, status, summary, fixIntent = fixIntent, fixLabel = fixLabel)
     }
 }

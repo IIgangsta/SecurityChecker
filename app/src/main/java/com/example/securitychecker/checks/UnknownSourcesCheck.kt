@@ -20,8 +20,6 @@ object UnknownSourcesCheck {
 
         for (pkg in pm.getInstalledPackages(0)) {
             try {
-                // На Android 10+ проверяем разрешение для конкретного пакета.
-                // В старых версиях может вернуться MODE_DEFAULT, считаем это скрытым.
                 val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     appOps.unsafeCheckOpNoThrow(OPSTR, pm.getApplicationInfo(pkg.packageName, 0).uid, pkg.packageName)
                 } else {
@@ -33,27 +31,15 @@ object UnknownSourcesCheck {
                     AppOpsManager.MODE_ALLOWED -> allowed += pkg.packageName
                     AppOpsManager.MODE_DEFAULT, AppOpsManager.MODE_ERRORED -> hasHiddenData = true
                 }
-            } catch (_: Throwable) {
-                // Игнорируем пакеты, к которым нет доступа
-            }
+            } catch (_: Throwable) {}
         }
 
-        // Если разрешений нет и данные не скрыты
         if (allowed.isEmpty() && !hasHiddenData) {
-            return CheckResult(
-                "unknown", title, CheckStatus.GREEN,
-                "Ни одно приложение не имеет разрешения на установку APK.",
-                fixIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
-            )
+            return CheckResult("unknown", title, CheckStatus.GREEN, "Ни одно приложение не имеет разрешения на установку APK.", fixIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES))
         }
 
-        // Если разрешений нет, но система скрывает данные (приватность)
         if (allowed.isEmpty() && hasHiddenData) {
-            return CheckResult(
-                "unknown", title, CheckStatus.GREEN,
-                "Система скрывает данные о разрешениях на установку APK (защита приватности). Если вы не давали таких прав вручную — всё в порядке.",
-                fixIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
-            )
+            return CheckResult("unknown", title, CheckStatus.GREEN, "Система скрывает данные о разрешениях на установку APK (защита приватности).", fixIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES))
         }
 
         val stores = setOf("com.android.vending", "ru.vk.store", "com.huawei.appmarket")
@@ -70,11 +56,7 @@ object UnknownSourcesCheck {
         }
 
         val status = if (suspicious.isEmpty()) CheckStatus.GREEN else CheckStatus.RED
-        val summary = if (suspicious.isEmpty()) {
-            "Право установки APK есть только у магазинов приложений."
-        } else {
-            "Сторонние приложения могут ставить APK! Проверьте список."
-        }
+        val summary = if (suspicious.isEmpty()) "Право установки APK есть только у магазинов приложений." else "Сторонние приложения могут ставить APK! Проверьте список."
 
         return CheckResult("unknown", title, status, summary, details, Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES))
     }

@@ -19,11 +19,12 @@ import com.example.securitychecker.models.CheckResult
 import com.example.securitychecker.models.CheckStatus
 
 @Composable
-fun CheckCard(result: CheckResult, onFix: () -> Unit) {
+fun CheckCard(result: CheckResult, isIgnored: Boolean, onFix: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    val color = when (result.status) {
+    // Если пропущено, красим в серый/зеленый, иначе по статусу
+    val color = if (isIgnored) Color(0xFF757575) else when (result.status) {
         CheckStatus.GREEN -> Color(0xFF2E7D32)
         CheckStatus.YELLOW -> Color(0xFFF9A825)
         CheckStatus.RED -> Color(0xFFC62828)
@@ -32,13 +33,18 @@ fun CheckCard(result: CheckResult, onFix: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
         shape = RoundedCornerShape(14.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isIgnored) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface)
     ) {
         Column(Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(12.dp).background(color, RoundedCornerShape(50)))
                 Spacer(Modifier.width(10.dp))
-                Text(result.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = result.title + if (isIgnored) " (Пропущено)" else "",
+                    fontWeight = FontWeight.Bold, 
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
             Spacer(Modifier.height(6.dp))
             Text(result.summary, style = MaterialTheme.typography.bodyMedium)
@@ -52,30 +58,24 @@ fun CheckCard(result: CheckResult, onFix: () -> Unit) {
                         val parts = detail.split("||")
                         val text = parts[0]
                         val pkgName = if (parts.size > 1) parts[1] else ""
-
                         if (pkgName.isNotEmpty()) {
-                            // Кликабельный текст для открытия настроек приложения
                             Text(
                                 text = text,
                                 style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                                        intent.data = Uri.parse("package:$pkgName")
-                                        context.startActivity(intent)
-                                    }
-                                    .padding(vertical = 4.dp)
+                                modifier = Modifier.fillMaxWidth().clickable {
+                                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                    intent.data = Uri.parse("package:$pkgName")
+                                    context.startActivity(intent)
+                                }.padding(vertical = 4.dp)
                             )
                         } else {
-                            // Обычный текст (для других проверок)
                             Text(text, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 2.dp))
                         }
                     }
                 }
             }
 
-            if (result.fixIntent != null) {
+            if (result.fixIntent != null && !isIgnored) {
                 Spacer(Modifier.height(8.dp))
                 Button(onClick = onFix, colors = ButtonDefaults.buttonColors(containerColor = color)) {
                     Text(result.fixLabel)

@@ -9,5 +9,6 @@ data class CheckResult(
     val summary: String,
     val details: List<String> = emptyList(),
     val fixIntent: Intent? = null,
-    val fixLabel: String = "Исправить"
+    val fixLabel: String = "Исправить",
+    val isIgnored: Boolean = false // Новое поле: пропущена ли проверка
 )
