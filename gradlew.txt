@@ -1,0 +1,20 @@
+#!/bin/sh
+apk="$0"
+case "`uname`" in
+  CYGWIN* | MINGW* | MSYS*) apk=`cygpath --path --windows "$apk"` ;;
+esac
+APP_HOME=$( cd "${apk%/*}" > /dev/null && pwd -P )
+CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
+if [ -n "$JAVA_HOME" ] ; then
+    if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
+        JAVACMD=$JAVA_HOME/jre/sh/java
+    else
+        JAVACMD=$JAVA_HOME/bin/java
+    fi
+    if [ ! -x "$JAVACMD" ] ; then
+        die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME"
+    fi
+else
+    JAVACMD=java
+fi
+exec "$JAVACMD" -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"
