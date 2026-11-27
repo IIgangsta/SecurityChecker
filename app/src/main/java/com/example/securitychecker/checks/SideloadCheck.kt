@@ -2,6 +2,7 @@ package com.example.securitychecker.checks
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.provider.Settings
 import com.example.securitychecker.models.CheckResult
 import com.example.securitychecker.models.CheckStatus
@@ -23,8 +24,15 @@ object SideloadCheck {
             if ((appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0) continue
 
             try {
-                // Получаем имя установщика (работает не на всех прошивках)
-                val installer = pm.getInstallSourceInfo(pkg.packageName).installingPackageName
+                // Проверяем версию Android
+                val installer: String? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    // Android 11+ (API 30+) используем новый метод
+                    pm.getInstallSourceInfo(pkg.packageName).installingPackageName
+                } else {
+                    // Android 10 и ниже используем старый метод
+                    @Suppress("DEPRECATION")
+                    pm.getInstallerPackageName(pkg.packageName)
+                }
                 
                 if (installer == null || installer !in officialStores) {
                     val appName = appInfo.loadLabel(pm).toString()
@@ -32,7 +40,7 @@ object SideloadCheck {
                     details.add("• $appName ($source)")
                 }
             } catch (_: Exception) {
-                // Если система не отдает данные (Android 11+ Huawei), пропускаем
+                // Если система не отдает данные, пропускаем
             }
         }
 

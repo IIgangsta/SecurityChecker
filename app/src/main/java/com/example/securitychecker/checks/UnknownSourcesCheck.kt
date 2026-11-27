@@ -35,10 +35,11 @@ object UnknownSourcesCheck {
                 val stores = setOf("ru.vk.store", "com.huawei.appmarket", "com.android.vending")
                 
                 if (pkgName !in stores) {
+                    // Более простые формулировки
                     val reason = when {
-                        hasApkActivity && hasRequestPermission -> "умеет открывать APK и просит права"
-                        hasApkActivity -> "умеет открывать APK"
-                        else -> "просит права на установку"
+                        hasApkActivity && hasRequestPermission -> "может ставить приложения"
+                        hasApkActivity -> "открывает установочные файлы"
+                        else -> "имеет доступ к установке"
                     }
                     details.add("• $appName||$pkgName|($reason)")
                 }
