@@ -22,6 +22,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
 import com.example.securitychecker.models.CheckResult
 import com.example.securitychecker.models.CheckStatus
@@ -74,6 +75,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                 "VPN...", "Опасные приложения...", "Владелец...", "RAT..."
             )
             
+            // Проверки теперь безопасные (в CheckEngine try-catch), вызываем в основном потоке
             val allResults = CheckEngine.runAll(activity)
             results = allResults
 
@@ -109,27 +111,43 @@ fun SecurityCheckerScreen(activity: MainActivity) {
     }
 
     Box(Modifier.fillMaxSize()) {
-        // Кнопка закрытия (уменьшили до 24dp, подняли выше, чтобы не было пустой полосы)
-        Box(
+        // Верхняя панель: Кнопка закрытия слева + Название устройства справа
+        Row(
             modifier = Modifier
-                .padding(top = 8.dp, start = 16.dp) // Уменьшили отступ сверху
-                .size(24.dp) // Еще меньше
-                .background(Color.White, CircleShape)
-                .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                .clickable { activity.finish() },
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .padding(top = 12.dp, start = 16.dp, end = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = "Выход",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(14.dp)
+            // Кнопка закрытия (маленькая, аккуратная)
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .background(Color.White, CircleShape)
+                    .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    .clickable { activity.finish() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Выход",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+
+            // Маркетинговое название устройства (или модель, если не удалось получить)
+            Text(
+                text = DeviceNameResolver.getMarketingName(),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
-        // Контент подняли наверх (отступ 45dp вместо 70dp)
-        Column(Modifier.fillMaxSize().padding(top = 45.dp)) {
+        // Контент под верхней панелью
+        Column(Modifier.fillMaxSize().padding(top = 60.dp)) {
             if (!started) {
+                // Экран приветствия
                 Column(
                     modifier = Modifier.fillMaxSize().padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -145,6 +163,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                     }
                 }
             } else if (progressAnim.value < 0.99f) {
+                // Экран загрузки с плавным кругом
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -154,9 +173,9 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                         CircularProgressIndicator(
                             progress = { progressAnim.value },
                             modifier = Modifier.size(200.dp), 
-                            strokeWidth = 16.dp, // Сделали толще, чтобы выглядело объемнее
+                            strokeWidth = 12.dp, // Вернули нормальную толщину
                             trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                            strokeCap = StrokeCap.Round
                         )
                         Text(
                             "${(progressAnim.value * 100).toInt()}%", 
@@ -169,13 +188,13 @@ fun SecurityCheckerScreen(activity: MainActivity) {
             } else {
                 // Экран результатов
                 Column(Modifier.fillMaxSize()) {
-                    // Блок с оценкой (со скругленными углами и тенью)
+                    // Блок с оценкой (скругленные углы, тень)
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp), // Отступы вокруг карточки
-                        shape = RoundedCornerShape(16.dp), // Скругленные углы
-                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp), // Тень
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                     ) {
                         Row(
@@ -187,11 +206,13 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                                 score >= 50 -> Color(0xFFF9A825)
                                 else -> Color(0xFFC62828)
                             }
+                            
+                            // Круг с оценкой (увеличен, толщина уменьшена)
                             Box(contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator(
                                     progress = { 1f },
-                                    modifier = Modifier.size(100.dp), // Чуть уменьшили круг
-                                    strokeWidth = 12.dp,
+                                    modifier = Modifier.size(120.dp), 
+                                    strokeWidth = 10.dp, 
                                     color = ringColor,
                                     trackColor = MaterialTheme.colorScheme.surfaceVariant
                                 )
@@ -203,6 +224,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                                     )
                                 }
                             }
+                            
                             Spacer(Modifier.width(16.dp))
                             Column {
                                 Text("Средний балл", style = MaterialTheme.typography.titleMedium)
@@ -212,20 +234,18 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(Modifier.height(8.dp))
-                                // Объемная кнопка "Повторить" с тенью
                                 Button(
                                     onClick = { 
                                         started = false
                                         ignoredChecks = emptySet()
                                     },
                                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp) // Тень для кнопки
+                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
                                 ) { Text("Повторить", style = MaterialTheme.typography.labelMedium) }
                             }
                         }
                     }
 
-                    // Небольшой отступ перед списком
                     Spacer(Modifier.height(8.dp))
 
                     LazyColumn(Modifier.weight(1f)) {
