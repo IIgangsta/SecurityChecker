@@ -1,3 +1,7 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -8,19 +12,17 @@ android {
     namespace = "com.example.securitychecker"
     compileSdk = 34
 
-        defaultConfig {
+    defaultConfig {
         applicationId = "com.example.securitychecker"
         minSdk = 26
         targetSdk = 34
         
         // Автоматическая генерация версии на основе текущей даты и времени
-        // Формат versionName: 1.0.YYMMDD (например, 1.0.261127)
-        // Формат versionCode: ГГММДДЧЧ (например, 26112715)
-        val date = java.text.SimpleDateFormat("yyMMddHH", java.util.Locale.US).format(java.util.Date())
-        val yearMonthDay = date.substring(0, 6) // yyMMdd
+        val date = SimpleDateFormat("yyMMddHH", Locale.US).format(Date())
+        val yearMonthDay = date.substring(0, 6)
         
-        versionCode = date.toInt() // Всегда уникальный номер
-        versionName = "1.0.$yearMonthDay" // Красивая версия для пользователя
+        versionCode = date.toInt()
+        versionName = "1.0.$yearMonthDay"
     }
 
     buildTypes {
@@ -38,7 +40,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     
-    // Новый блок компилятора Kotlin
     kotlin {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
@@ -58,9 +59,6 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
     implementation("androidx.core:core-ktx:1.13.1")
-    
-    // Добавляем библиотеку анимации для плавного прогресс-бара
     implementation("androidx.compose.animation:animation")
-    
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
