@@ -28,7 +28,11 @@ object AccessibilityCheck {
         return if (thirdParty.isEmpty()) {
             CheckResult("accessibility", title, CheckStatus.GREEN, "Только системные службы.", details, Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         } else {
-            CheckResult("accessibility", title, CheckStatus.RED, "Сторонняя служба может нажимать кнопки!", details, Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            CheckResult(
+                "accessibility", title, CheckStatus.RED, 
+                "Включение спецвозможностей для неизвестных приложений — это прямой путь к заражению! Они могут нажимать кнопки и читать экран за вас.", 
+                details, Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            )
         }
     }
 }

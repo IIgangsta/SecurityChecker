@@ -76,7 +76,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                 "Патч...", "Спецвозможности...", "Администраторы...", 
                 "Источники...", "Версия...", "Разрешения...",
                 "Root-права...", "Блокировка...", "Отладка...",
-                "VPN...", "Опасные приложения...", "Владелец...", "RAT..."
+                "VPN...", "Опасные приложения...", "Владелец...", "RAT...", "Маскировка..."
             )
             
             val allResults = CheckEngine.runAll(activity)
@@ -155,7 +155,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 24.dp)
-                        .verticalScroll(rememberScrollState()), // Добавили скролл на случай маленьких экранов
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Spacer(Modifier.height(20.dp))
@@ -175,6 +175,19 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                     ) {
                         Column(Modifier.padding(16.dp)) {
                             Text(
+                                "Гигиенический сканер",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Это не антивирус, а сканер настроек, через которые злоумышленники получают доступ к устройству (RAT, трояны).",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            
+                            Text(
                                 "Принципы работы",
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.titleSmall,
@@ -182,33 +195,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                             )
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                "Приложение не затрагивает системные файлы и не требует root-доступа. Оно не работает в фоне и не запрашивает опасных разрешений.",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            Spacer(Modifier.height(12.dp))
-                            
-                            Text(
-                                "Что проверяем",
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                "Анализ потенциальных уязвимостей для удаленного доступа (RAT), таких как RatHat, AnyDesk, TeamViewer, а также проверка прав администраторов, спецвозможностей и доступов к SMS/камере.",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            Spacer(Modifier.height(12.dp))
-
-                            Text(
-                                "Рекомендация",
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                "Регулярно проводите проверку для контроля безопасности вашего устройства. Все изменения в настройках вы вносите самостоятельно.",
+                                "Не затрагивает системные файлы, не требует root. Регулярно проверяя устройство, вы многократно снижаете риски.",
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -279,7 +266,6 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                                     trackColor = MaterialTheme.colorScheme.surfaceVariant
                                 )
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    // Добавили знак %
                                     Text("$score%", style = MaterialTheme.typography.headlineLarge)
                                     Text(
                                         text = when { score >= 80 -> "Защищено"; score >= 50 -> "Внимание"; else -> "Опасно" },

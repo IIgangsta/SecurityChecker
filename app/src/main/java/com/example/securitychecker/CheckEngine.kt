@@ -9,7 +9,6 @@ object CheckEngine {
     fun runAll(context: Context): List<CheckResult> {
         val results = mutableListOf<CheckResult>()
 
-        // Безопасный запуск проверки: если упадет, приложение выживет
         fun safeRun(id: String, title: String, block: () -> CheckResult) {
             try {
                 results.add(block())
@@ -38,6 +37,8 @@ object CheckEngine {
         safeRun("dangerous_apps", "Опасные приложения") { DangerousAppsCheck.run(context) }
         safeRun("device_owner", "Владелец устройства") { DeviceOwnerCheck.run(context) }
         safeRun("rat", "Удаленный доступ (RAT)") { RatCheck.run(context) }
+        // Добавляем новую проверку
+        safeRun("suspicious_names", "Маскировка под систему") { SuspiciousNamesCheck.run(context) }
 
         return results
     }
