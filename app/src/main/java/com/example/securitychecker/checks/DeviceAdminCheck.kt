@@ -1,6 +1,6 @@
 
 package com.example.securitychecker.checks
-import android.content.pm.PackageManager
+
 import android.content.pm.PackageManager
 import android.app.admin.DevicePolicyManager
 import android.content.Context
