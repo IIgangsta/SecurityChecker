@@ -10,7 +10,10 @@ object DangerousPermissionsCheck {
     fun run(context: Context): CheckResult {
         val title = "Опасные разрешения"
         val pm = context.packageManager
-        val details = mutableListOf<String>()
+        
+        // Используем Map для группировки: Ключ = Имя приложения, Значение = Пакет и список разрешений
+        data class AppPerms(val pkgName: String, val appName: String, val permissions: MutableList<String> = mutableListOf())
+        val appsMap = mutableMapOf<String, AppPerms>()
 
         val targetPermissions = listOf(
             android.Manifest.permission.RECEIVE_SMS,
@@ -35,26 +38,35 @@ object DangerousPermissionsCheck {
                     val appName = appInfo.loadLabel(pm).toString()
                     
                     val permName = when (perm) {
-                        android.Manifest.permission.RECEIVE_SMS -> "Прием SMS"
-                        android.Manifest.permission.READ_SMS -> "Чтение SMS"
-                        android.Manifest.permission.SEND_SMS -> "Отправка SMS"
+                        android.Manifest.permission.RECEIVE_SMS -> "SMS (прием)"
+                        android.Manifest.permission.READ_SMS -> "SMS (чтение)"
+                        android.Manifest.permission.SEND_SMS -> "SMS (отправка)"
                         android.Manifest.permission.CAMERA -> "Камера"
                         android.Manifest.permission.SYSTEM_ALERT_WINDOW -> "Поверх окон"
-                        android.Manifest.permission.ACCESS_FINE_LOCATION -> "Геолокация (точная)"
-                        android.Manifest.permission.ACCESS_COARSE_LOCATION -> "Геолокация (примерная)"
+                        android.Manifest.permission.ACCESS_FINE_LOCATION -> "Гео (точная)"
+                        android.Manifest.permission.ACCESS_COARSE_LOCATION -> "Гео (примерная)"
                         else -> "Другое"
                     }
 
-                    // Формат: "Имя приложения|Пакет|Разрешение"
-                    details.add("• $appName ($permName)||${pkgInfo.packageName}")
+                    // Группируем по имени пакета
+                    val appData = appsMap.getOrPut(pkgInfo.packageName) { AppPerms(pkgInfo.packageName, appName) }
+                    if (!appData.permissions.contains(permName)) {
+                        appData.permissions.add(permName)
+                    }
                 }
             } catch (_: Throwable) {}
         }
 
-        // Убираем дубликаты по имени пакета и разрешению
-        val uniqueDetails = details.distinctBy { it.split("||")[0] + it.split("||")[1] }
+        // Формируем итоговый список строк
+        val details = mutableListOf<String>()
+        for ((_, appData) in appsMap) {
+            // Сортируем разрешения по алфавиту для красоты
+            val permsString = appData.permissions.sorted().joinToString(", ")
+            // Формат: "• Имя (Разрешение 1, Разрешение 2)||пакет"
+            details.add("• ${appData.appName} ($permsString)||${appData.pkgName}")
+        }
 
-        return if (uniqueDetails.isEmpty()) {
+        return if (details.isEmpty()) {
             CheckResult(
                 "danger", title, CheckStatus.GREEN,
                 "У сторонних приложений нет доступа к SMS, камере или геолокации.",
@@ -63,8 +75,8 @@ object DangerousPermissionsCheck {
         } else {
             CheckResult(
                 "danger", title, CheckStatus.YELLOW,
-                "Найдено ${uniqueDetails.size} разрешений. Нажмите на приложение, чтобы открыть его настройки.",
-                uniqueDetails,
+                "Найдено ${details.size} приложений с опасными правами. Нажмите на приложение для настройки.",
+                details.sorted(),
                 Intent(Settings.ACTION_APPLICATION_SETTINGS)
             )
         }

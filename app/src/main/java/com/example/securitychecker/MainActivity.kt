@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.securitychecker.models.CheckResult
 import com.example.securitychecker.models.CheckStatus
@@ -49,7 +50,8 @@ fun SecurityCheckerScreen(activity: MainActivity) {
     var targetProgress by remember { mutableIntStateOf(0) }
     var results by remember { mutableStateOf<List<CheckResult>>(emptyList()) }
     var currentStageText by remember { mutableStateOf("Инициализация...") }
-    
+
+    // Плавная анимация прогресса
     val animatedProgress by animateFloatAsState(
         targetValue = targetProgress / 100f,
         animationSpec = tween(durationMillis = 300, easing = LinearEasing),
@@ -58,7 +60,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
 
     LaunchedEffect(started) {
         if (started && targetProgress == 0) {
-            // Имитируем пошаговую проверку с изменением текста
+            // Имитируем пошаговую проверку
             val stages = listOf(
                 "Проверка патча безопасности...",
                 "Проверка спецвозможностей...",
@@ -72,14 +74,14 @@ fun SecurityCheckerScreen(activity: MainActivity) {
 
             for (i in stages.indices) {
                 currentStageText = stages[i]
-                // Задержка для анимации на каждом этапе
-                delay(400) 
+                delay(400) // Задержка для визуального эффекта
                 targetProgress = ((i + 1) * 100) / stages.size
             }
             results = allResults
         }
     }
 
+    // Подсчет общей оценки
     val score = remember(results) {
         if (results.isEmpty()) 0
         else {
@@ -97,7 +99,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text("SecurityChecker 1.0.3", style = MaterialTheme.typography.headlineMedium)
+            Text("SecurityChecker 1.0.7", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(16.dp))
             Text("Модель: ${Build.MANUFACTURER} ${Build.MODEL}", style = MaterialTheme.typography.bodyLarge)
             Text("Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})", style = MaterialTheme.typography.bodyLarge)
@@ -107,17 +109,16 @@ fun SecurityCheckerScreen(activity: MainActivity) {
             }
         }
     } else if (targetProgress < 100) {
-        // Экран загрузки (улучшенный)
+        // Экран загрузки
         Column(
-            modifier = Modifier.fillMaxSize().padding(top = 100.dp), // Подняли повыше
+            modifier = Modifier.fillMaxSize().padding(top = 100.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Увеличили размер круга
             Box(contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(
                     progress = { animatedProgress },
-                    modifier = Modifier.size(220.dp), // Увеличено
-                    strokeWidth = 16.dp, // Увеличена толщина
+                    modifier = Modifier.size(220.dp),
+                    strokeWidth = 16.dp,
                     trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
                 Text("${(animatedProgress * 100).toInt()}%", style = MaterialTheme.typography.displayLarge)
@@ -125,7 +126,6 @@ fun SecurityCheckerScreen(activity: MainActivity) {
             
             Spacer(Modifier.height(48.dp))
             
-            // Подпись под кругом
             Text(
                 text = currentStageText, 
                 style = MaterialTheme.typography.titleMedium,
@@ -140,7 +140,6 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    // Красим круг в зависимости от оценки
                     val ringColor = when {
                         score >= 80 -> Color(0xFF2E7D32) // Зеленый
                         score >= 50 -> Color(0xFFF9A825) // Оранжевый
@@ -148,7 +147,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                     }
 
                     CircularProgressIndicator(
-                        progress = { 1f }, // Всегда полный круг
+                        progress = { 1f },
                         modifier = Modifier.size(180.dp),
                         strokeWidth = 14.dp,
                         color = ringColor,
@@ -158,15 +157,28 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                         Text("$score", style = MaterialTheme.typography.displayLarge)
                         Text(
                             text = when {
-                                score >= 80 -> "Отлично"
-                                score >= 50 -> "Обычный"
+                                score >= 80 -> "Защищено"
+                                score >= 50 -> "Внимание"
                                 else -> "Опасно"
                             },
-                            style = MaterialTheme.typography.bodyLarge
+                            style = MaterialTheme.typography.titleMedium,
+                            color = ringColor
                         )
                     }
                 }
-                Spacer(Modifier.height(12.dp))
+                
+                Spacer(Modifier.height(16.dp))
+                
+                Text(
+                    text = "Средний балл безопасности. Решите проблемы в списке ниже, чтобы повысить оценку.",
+                    modifier = Modifier.padding(horizontal = 32.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(Modifier.height(16.dp))
+                
                 Button(
                     onClick = { 
                         started = false
