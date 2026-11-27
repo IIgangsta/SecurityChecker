@@ -73,7 +73,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                 "VPN...", "Опасные приложения...", "Владелец...", "RAT..."
             )
             
-            // Проверки теперь безопасные, вызываем в основном потоке
+            // Проверки теперь безопасные (в CheckEngine try-catch), вызываем в основном потоке
             val allResults = CheckEngine.runAll(activity)
             results = allResults
 
@@ -129,6 +129,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
 
         Column(Modifier.fillMaxSize().padding(top = 70.dp)) {
             if (!started) {
+                // Экран приветствия
                 Column(
                     modifier = Modifier.fillMaxSize().padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -144,6 +145,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                     }
                 }
             } else if (progressAnim.value < 0.99f) {
+                // Экран загрузки с плавным кругом
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -164,52 +166,58 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                     Text(currentStageText, style = MaterialTheme.typography.titleMedium)
                 }
             } else {
+                // Экран результатов
                 Column(Modifier.fillMaxSize()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    // Блок с оценкой (непрозрачный, с тенью, чтобы список не заезжал)
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.surface,
+                        shadowElevation = 4.dp
                     ) {
-                        val ringColor = when {
-                            score >= 80 -> Color(0xFF2E7D32)
-                            score >= 50 -> Color(0xFFF9A825)
-                            else -> Color(0xFFC62828)
-                        }
-                        Box(contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(
-                                progress = { 1f },
-                                modifier = Modifier.size(110.dp),
-                                strokeWidth = 10.dp,
-                                color = ringColor,
-                                trackColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("$score", style = MaterialTheme.typography.headlineLarge)
-                                Text(
-                                    text = when { score >= 80 -> "Защищено"; score >= 50 -> "Внимание"; else -> "Опасно" },
-                                    style = MaterialTheme.typography.labelSmall, color = ringColor
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val ringColor = when {
+                                score >= 80 -> Color(0xFF2E7D32)
+                                score >= 50 -> Color(0xFFF9A825)
+                                else -> Color(0xFFC62828)
+                            }
+                            Box(contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(
+                                    progress = { 1f },
+                                    modifier = Modifier.size(110.dp),
+                                    strokeWidth = 10.dp,
+                                    color = ringColor,
+                                    trackColor = MaterialTheme.colorScheme.surfaceVariant
                                 )
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("$score", style = MaterialTheme.typography.headlineLarge)
+                                    Text(
+                                        text = when { score >= 80 -> "Защищено"; score >= 50 -> "Внимание"; else -> "Опасно" },
+                                        style = MaterialTheme.typography.labelSmall, color = ringColor
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.width(20.dp))
+                            Column {
+                                Text("Средний балл", style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    "Решите проблемы или пропустите неактуальные пункты.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Button(
+                                    onClick = { 
+                                        started = false
+                                        ignoredChecks = emptySet()
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                                ) { Text("Повторить", style = MaterialTheme.typography.labelMedium) }
                             }
                         }
-                        Spacer(Modifier.width(20.dp))
-                        Column {
-                            Text("Средний балл", style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                "Решите проблемы или пропустите неактуальные пункты.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Button(
-                                onClick = { 
-                                    started = false
-                                    ignoredChecks = emptySet()
-                                },
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                            ) { Text("Повторить", style = MaterialTheme.typography.labelMedium) }
-                        }
                     }
-
-                    Spacer(Modifier.height(16.dp))
 
                     LazyColumn(Modifier.weight(1f)) {
                         items(results) { r ->
