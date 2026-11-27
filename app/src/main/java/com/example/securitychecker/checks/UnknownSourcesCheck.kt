@@ -15,34 +15,36 @@ object UnknownSourcesCheck {
         val pm = context.packageManager
         val details = mutableListOf<String>()
 
-        // 1. Получаем список приложений, которые умеют открывать APK-файлы
+        // 1. Ищем приложения, которые умеют открывать APK
         val apkIntent = Intent(Intent.ACTION_VIEW).apply {
             type = MIME_APK
             addCategory(Intent.CATEGORY_DEFAULT)
         }
         val apkHandlers = pm.queryIntentActivities(apkIntent, 0)
 
-        // 2. Проверяем все приложения
+        // 2. Проверяем все несистемные приложения
         for (pkg in pm.getInstalledPackages(PackageManager.GET_PERMISSIONS)) {
             val pkgName = pkg.packageName
             val appInfo = pkg.applicationInfo ?: continue
             
-            // Пропускаем системные приложения
             if ((appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0) continue
 
-            // Ищем активность для APK и разрешение в манифесте
             val hasApkActivity = apkHandlers.any { it.activityInfo.packageName == pkgName }
             val hasRequestPermission = pkg.requestedPermissions?.contains("android.permission.REQUEST_INSTALL_PACKAGES") == true
 
-            // Если есть и активность, и разрешение в манифесте — добавляем
-            if (hasApkActivity && hasRequestPermission) {
+            // 3. Если приложение умеет открывать APK ИЛИ просит разрешение
+            if (hasApkActivity || hasRequestPermission) {
                 val appName = appInfo.loadLabel(pm).toString()
-                
-                // Пропускаем официальные магазины (чтобы не пугать пользователя)
                 val stores = setOf("ru.vk.store", "com.huawei.appmarket", "com.android.vending")
+                
                 if (pkgName !in stores) {
-                    // Формат: "• Название (Пакет)" с разделителем для клика
-                    details.add("• $appName||$pkgName")
+                    val reason = when {
+                        hasApkActivity && hasRequestPermission -> "умеет открывать APK и просит права"
+                        hasApkActivity -> "умеет открывать APK"
+                        else -> "просит права на установку"
+                    }
+                    // Формат для клика: "• Имя||пакет|(причина)"
+                    details.add("• $appName||$pkgName|($reason)")
                 }
             }
         }
@@ -50,13 +52,13 @@ object UnknownSourcesCheck {
         return if (details.isEmpty()) {
             CheckResult(
                 "unknown", title, CheckStatus.GREEN,
-                "Сторонних приложений с правом установки APK не найдено.",
+                "Система Android скрывает точный список приложений с правом установки. Проверьте вручную: Настройки → Приложения → Специальный доступ → Установка неизвестных приложений.",
                 fixIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
             )
         } else {
             CheckResult(
                 "unknown", title, CheckStatus.YELLOW,
-                "Найдено ${details.size} приложений, которые могут устанавливать APK. Проверьте список.",
+                "Найдено ${details.size} потенциальных установщиков. Система может скрывать часть данных, проверьте вручную.",
                 details.sorted(),
                 fixIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES),
                 fixLabel = "Пропустить (я доверяю этим приложениям)"
