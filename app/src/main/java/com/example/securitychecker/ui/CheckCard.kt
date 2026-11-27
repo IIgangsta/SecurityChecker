@@ -57,10 +57,14 @@ fun CheckCard(result: CheckResult, isIgnored: Boolean, onFix: () -> Unit) {
                     result.details.forEach { detail ->
                         val parts = detail.split("||")
                         val text = parts[0]
-                        val pkgName = if (parts.size > 1) parts[1] else ""
+                        val pkgName = if (parts.size > 1) parts[1].split("|")[0] else ""
+                        val reason = if (parts.size > 1 && parts[1].contains("|")) parts[1].substringAfter("|") else ""
+                        
+                        val displayText = if (reason.isNotEmpty()) "$text $reason" else text
+
                         if (pkgName.isNotEmpty()) {
                             Text(
-                                text = text,
+                                text = displayText,
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.fillMaxWidth().clickable {
                                     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
@@ -69,33 +73,30 @@ fun CheckCard(result: CheckResult, isIgnored: Boolean, onFix: () -> Unit) {
                                 }.padding(vertical = 4.dp)
                             )
                         } else {
-                            Text(text, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 2.dp))
+                            Text(displayText, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 2.dp))
                         }
                     }
                     
-                    // Кнопка "Пропустить" появляется ТОЛЬКО после разворота
                     if (result.fixLabel.contains("Пропустить")) {
                         Spacer(Modifier.height(8.dp))
                         Button(
                             onClick = onFix,
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = color) // Оранжевый фон
+                            colors = ButtonDefaults.buttonColors(containerColor = color)
                         ) {
-                            // Перенос строки для скобок
                             val formattedLabel = result.fixLabel.replace(" (", "\n(")
-                            Text(
-                                text = formattedLabel,
-                                textAlign = TextAlign.Center,
-                                style = MaterialTheme.typography.labelLarge
-                            )
+                            Text(text = formattedLabel, textAlign = TextAlign.Center)
                         }
                     }
                 }
             }
 
+            // Скрываем кнопку, если статус GREEN (и это не кнопка "Пропустить", которая нужна для повышения балла)
             if (result.fixIntent != null && !isIgnored) {
                 val showOutside = !result.fixLabel.contains("Пропустить") || result.details.isEmpty()
-                if (showOutside) {
+                val shouldShowButton = result.status != CheckStatus.GREEN || result.fixLabel.contains("Пропустить")
+                
+                if (showOutside && shouldShowButton) {
                     Spacer(Modifier.height(8.dp))
                     Button(onClick = onFix, colors = ButtonDefaults.buttonColors(containerColor = color)) {
                         val formattedLabel = result.fixLabel.replace(" (", "\n(")

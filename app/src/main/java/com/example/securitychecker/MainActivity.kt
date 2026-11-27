@@ -13,8 +13,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
@@ -23,6 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.securitychecker.models.CheckResult
 import com.example.securitychecker.models.CheckStatus
@@ -75,7 +79,6 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                 "VPN...", "Опасные приложения...", "Владелец...", "RAT..."
             )
             
-            // Проверки теперь безопасные (в CheckEngine try-catch), вызываем в основном потоке
             val allResults = CheckEngine.runAll(activity)
             results = allResults
 
@@ -111,18 +114,17 @@ fun SecurityCheckerScreen(activity: MainActivity) {
     }
 
     Box(Modifier.fillMaxSize()) {
-        // Верхняя панель: Кнопка закрытия слева + Название устройства справа
-        Row(
+        // Верхняя панель
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 12.dp, start = 16.dp, end = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(top = 12.dp, start = 16.dp, end = 16.dp)
         ) {
-            // Кнопка закрытия (маленькая, аккуратная)
+            // Кнопка закрытия
             Box(
                 modifier = Modifier
                     .size(28.dp)
+                    .align(Alignment.CenterStart)
                     .background(Color.White, CircleShape)
                     .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)
                     .clickable { activity.finish() },
@@ -136,31 +138,93 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                 )
             }
 
-            // Маркетинговое название устройства (или модель, если не удалось получить)
+            // Название программы по центру
             Text(
-                text = DeviceNameResolver.getMarketingName(),
+                text = "SecurityChecker 1.0",
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(Alignment.Center),
+                textAlign = TextAlign.Center
             )
         }
 
-        // Контент под верхней панелью
         Column(Modifier.fillMaxSize().padding(top = 60.dp)) {
             if (!started) {
                 // Экран приветствия
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 24.dp)
+                        .verticalScroll(rememberScrollState()), // Добавили скролл на случай маленьких экранов
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("SecurityChecker", style = MaterialTheme.typography.headlineMedium)
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(20.dp))
+                    
                     Text("Модель: ${Build.MANUFACTURER} ${Build.MODEL}", style = MaterialTheme.typography.bodyLarge)
                     Text("Android: ${Build.VERSION.RELEASE}", style = MaterialTheme.typography.bodyLarge)
-                    Spacer(Modifier.height(32.dp))
-                    Button(onClick = { started = true }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-                        Text("Начать проверку")
+                    
+                    Spacer(Modifier.height(24.dp))
+
+                    // Информационный блок
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text(
+                                "Принципы работы",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Приложение не затрагивает системные файлы и не требует root-доступа. Оно не работает в фоне и не запрашивает опасных разрешений.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            
+                            Text(
+                                "Что проверяем",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Анализ потенциальных уязвимостей для удаленного доступа (RAT), таких как RatHat, AnyDesk, TeamViewer, а также проверка прав администраторов, спецвозможностей и доступов к SMS/камере.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Spacer(Modifier.height(12.dp))
+
+                            Text(
+                                "Рекомендация",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Регулярно проводите проверку для контроля безопасности вашего устройства. Все изменения в настройках вы вносите самостоятельно.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                     }
+
+                    Spacer(Modifier.height(32.dp))
+
+                    Button(
+                        onClick = { started = true }, 
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Начать проверку", style = MaterialTheme.typography.titleMedium)
+                    }
+                    
+                    Spacer(Modifier.height(24.dp))
                 }
             } else if (progressAnim.value < 0.99f) {
                 // Экран загрузки с плавным кругом
@@ -173,7 +237,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                         CircularProgressIndicator(
                             progress = { progressAnim.value },
                             modifier = Modifier.size(200.dp), 
-                            strokeWidth = 12.dp, // Вернули нормальную толщину
+                            strokeWidth = 12.dp,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant,
                             strokeCap = StrokeCap.Round
                         )
@@ -188,7 +252,6 @@ fun SecurityCheckerScreen(activity: MainActivity) {
             } else {
                 // Экран результатов
                 Column(Modifier.fillMaxSize()) {
-                    // Блок с оценкой (скругленные углы, тень)
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -207,7 +270,6 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                                 else -> Color(0xFFC62828)
                             }
                             
-                            // Круг с оценкой (увеличен, толщина уменьшена)
                             Box(contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator(
                                     progress = { 1f },
@@ -217,7 +279,8 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                                     trackColor = MaterialTheme.colorScheme.surfaceVariant
                                 )
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("$score", style = MaterialTheme.typography.headlineLarge)
+                                    // Добавили знак %
+                                    Text("$score%", style = MaterialTheme.typography.headlineLarge)
                                     Text(
                                         text = when { score >= 80 -> "Защищено"; score >= 50 -> "Внимание"; else -> "Опасно" },
                                         style = MaterialTheme.typography.labelSmall, color = ringColor
