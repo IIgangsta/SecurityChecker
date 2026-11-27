@@ -21,12 +21,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.securitychecker.models.CheckResult
 import com.example.securitychecker.models.CheckStatus
 import com.example.securitychecker.ui.CheckCard
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,12 +62,10 @@ fun SecurityCheckerScreen(activity: MainActivity) {
     var currentStageText by remember { mutableStateOf("Инициализация...") }
     var ignoredChecks by remember { mutableStateOf(setOf<String>()) }
 
-    // Используем Animatable для супер-плавной анимации
     val progressAnim = remember { Animatable(0f) }
 
     LaunchedEffect(started) {
         if (started) {
-            // Сбрасываем анимацию при новом запуске
             progressAnim.snapTo(0f)
             
             val stages = listOf(
@@ -76,21 +75,20 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                 "VPN...", "Опасные приложения...", "Владелец...", "RAT..."
             )
             
-            // Сначала собираем результаты (это быстро)
-            val allResults = CheckEngine.runAll(activity)
+            // ВЫНОСИМ ТЯЖЕЛЫЕ ПРОВЕРКИ В ФОНОВЫЙ ПОТОК
+            val allResults = withContext(Dispatchers.IO) {
+                CheckEngine.runAll(activity)
+            }
             results = allResults
 
-            // Теперь плавно проигрываем анимацию и меняем текст
             val totalSteps = stages.size
             for (i in 0 until totalSteps) {
                 currentStageText = stages[i]
-                // Анимируем от текущего значения до следующего шага
-                // 2000f — это скорость анимации (чем больше, тем плавнее и дольше)
                 progressAnim.animateTo(
                     targetValue = (i + 1).toFloat() / totalSteps,
                     animationSpec = tween(durationMillis = 200, easing = LinearEasing)
                 )
-                delay(50) // Небольшая пауза между этапами для читаемости
+                delay(50)
             }
         }
     }
@@ -115,12 +113,12 @@ fun SecurityCheckerScreen(activity: MainActivity) {
     }
 
     Box(Modifier.fillMaxSize()) {
-        // Кнопка выхода
+        // Кнопка выхода (УМЕНЬШИЛИ ДИАМЕТР ДО 24, обводка 1dp, крестик 14dp)
         IconButton(
             onClick = { activity.finish() },
             modifier = Modifier
                 .padding(12.dp)
-                .size(28.dp)
+                .size(24.dp)
                 .background(Color.White, CircleShape)
                 .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)
         ) {
@@ -134,7 +132,6 @@ fun SecurityCheckerScreen(activity: MainActivity) {
 
         Column(Modifier.fillMaxSize().padding(top = 60.dp)) {
             if (!started) {
-                // Экран приветствия
                 Column(
                     modifier = Modifier.fillMaxSize().padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -150,7 +147,6 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                     }
                 }
             } else if (progressAnim.value < 0.99f) {
-                // Экран загрузки с плавным кругом
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -158,7 +154,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(
-                            progress = { progressAnim.value }, // Передаем анимированное значение
+                            progress = { progressAnim.value },
                             modifier = Modifier.size(200.dp), 
                             strokeWidth = 14.dp
                         )
@@ -171,7 +167,6 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                     Text(currentStageText, style = MaterialTheme.typography.titleMedium)
                 }
             } else {
-                // Экран результатов
                 Column(Modifier.fillMaxSize()) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
@@ -210,7 +205,6 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                             Button(
                                 onClick = { 
                                     started = false
-                                    // Сбрасываем анимацию в фоне, чтобы при следующем запуске все было ок
                                     ignoredChecks = emptySet()
                                 },
                                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
