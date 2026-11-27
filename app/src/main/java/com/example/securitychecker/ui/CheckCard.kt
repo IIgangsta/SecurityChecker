@@ -77,10 +77,14 @@ fun CheckCard(result: CheckResult, isIgnored: Boolean, onFix: () -> Unit) {
                         }
                     }
                     
-                    if (result.fixLabel.contains("Пропустить")) {
+                    // Кнопка "Пропустить" появляется ТОЛЬКО после разворота
+                    if (result.fixLabel.contains("Пропустить") && !isIgnored) {
                         Spacer(Modifier.height(8.dp))
                         Button(
-                            onClick = onFix,
+                            onClick = {
+                                onFix()        // Выполняем пропуск
+                                expanded = false // Сворачиваем список
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = color)
                         ) {
@@ -91,7 +95,7 @@ fun CheckCard(result: CheckResult, isIgnored: Boolean, onFix: () -> Unit) {
                 }
             }
 
-            // Скрываем кнопку, если статус GREEN (и это не кнопка "Пропустить", которая нужна для повышения балла)
+            // Основная кнопка (Исправить) - только если это не "Пропустить" и не "Игнорировано"
             if (result.fixIntent != null && !isIgnored) {
                 val showOutside = !result.fixLabel.contains("Пропустить") || result.details.isEmpty()
                 val shouldShowButton = result.status != CheckStatus.GREEN || result.fixLabel.contains("Пропустить")

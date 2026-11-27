@@ -79,6 +79,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                 "VPN...", "Опасные приложения...", "Владелец...", "RAT...", "Маскировка..."
             )
             
+            // Проверки теперь безопасные (в CheckEngine try-catch), вызываем в основном потоке
             val allResults = CheckEngine.runAll(activity)
             results = allResults
 
@@ -276,7 +277,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                             
                             Spacer(Modifier.width(16.dp))
                             Column {
-                                Text("Средний балл", style = MaterialTheme.typography.titleMedium)
+                                Text("Уровень безопасности", style = MaterialTheme.typography.titleMedium) // <-- Изменено
                                 Text(
                                     text = if (score == 100) "Все проверки пройдены отлично!" else "Решите проблемы или пропустите неактуальные пункты.",
                                     style = MaterialTheme.typography.bodySmall,
