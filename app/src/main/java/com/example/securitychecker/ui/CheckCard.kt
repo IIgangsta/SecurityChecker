@@ -49,6 +49,24 @@ fun CheckCard(result: CheckResult, isIgnored: Boolean, onFix: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             Text(result.summary, style = MaterialTheme.typography.bodyMedium)
 
+            // Объяснение вместо страшилок
+            val explanation = when (result.id) {
+                "overlay" -> "Злоумышленники используют наложение, чтобы подсунуть вам фейковую кнопку «Оплатить» поверх настоящего банковского приложения."
+                "sideload" -> "APK-файлы не проверяются Google Play. Вирус может быть замаскирован под полезную программу."
+                "accessibility" -> "Спецвозможности позволяют приложению читать экран и нажимать кнопки за вас. Так работают многие трояны."
+                else -> null
+            }
+            
+            if (explanation != null && result.status != CheckStatus.GREEN) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = explanation,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
             if (result.details.isNotEmpty()) {
                 TextButton(onClick = { expanded = !expanded }, contentPadding = PaddingValues(0.dp)) {
                     Text(if (expanded) "Свернуть" else "Показать детали")

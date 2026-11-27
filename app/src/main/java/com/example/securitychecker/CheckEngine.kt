@@ -37,9 +37,11 @@ object CheckEngine {
         safeRun("dangerous_apps", "Опасные приложения") { DangerousAppsCheck.run(context) }
         safeRun("device_owner", "Владелец устройства") { DeviceOwnerCheck.run(context) }
         safeRun("rat", "Удаленный доступ (RAT)") { RatCheck.run(context) }
-        // Добавляем новую проверку
         safeRun("suspicious_names", "Маскировка под систему") { SuspiciousNamesCheck.run(context) }
-
+        // Новые проверки
+        safeRun("overlay", "Наложение окон (Оверлеи)") { OverlayCheck.run(context) }
+        safeRun("sideload", "Скачано вручную (APK)") { SideloadCheck.run(context) }
+        safeRun("recent_apps", "Новые приложения") { RecentAppsCheck.run(context) }
         return results
     }
 }
