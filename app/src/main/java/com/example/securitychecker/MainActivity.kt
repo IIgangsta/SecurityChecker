@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
 
     fun launchFix(result: CheckResult, onIgnore: () -> Unit) {
         if (result.fixLabel.contains("Пропустить")) {
-            onIgnore() // Пользователь нажал "Пропустить"
+            onIgnore()
         } else {
             val intent = result.fixIntent ?: return
             try {
@@ -59,15 +59,13 @@ fun SecurityCheckerScreen(activity: MainActivity) {
     var targetProgress by remember { mutableIntStateOf(0) }
     var results by remember { mutableStateOf<List<CheckResult>>(emptyList()) }
     var currentStageText by remember { mutableStateOf("Инициализация...") }
-    
-    // Список игнорируемых проверок (по ID)
     var ignoredChecks by remember { mutableStateOf(setOf<String>()) }
 
     val animatedProgress by animateFloatAsState(targetValue = targetProgress / 100f, animationSpec = tween(300), label = "Progress")
 
     LaunchedEffect(started) {
         if (started && targetProgress == 0) {
-            val stages = listOf("Проверка патча...", "Спецвозможности...", "Администраторы...", "Источники...", "Версия Android...", "Разрешения...")
+            val stages = listOf("Патч...", "Спецвозможности...", "Администраторы...", "Источники...", "Версия...", "Разрешения...")
             val allResults = CheckEngine.runAll(activity)
             for (i in stages.indices) {
                 currentStageText = stages[i]
@@ -78,14 +76,13 @@ fun SecurityCheckerScreen(activity: MainActivity) {
         }
     }
 
-    // Подсчет оценки с учетом пропущенных
     val score = remember(results, ignoredChecks) {
         if (results.isEmpty()) 0
         else {
             var totalPoints = 0
             for (r in results) {
                 if (r.id in ignoredChecks) {
-                    totalPoints += 100 // Если пропущено, считаем как 100 (зеленый)
+                    totalPoints += 100
                 } else {
                     totalPoints += when (r.status) {
                         CheckStatus.GREEN -> 100
@@ -98,115 +95,112 @@ fun SecurityCheckerScreen(activity: MainActivity) {
         }
     }
 
-    if (!started) {
-        // Экран приветствия
-        Box(Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text("SecurityChecker", style = MaterialTheme.typography.headlineMedium)
-                Spacer(Modifier.height(16.dp))
-                Text("Модель: ${Build.MANUFACTURER} ${Build.MODEL}", style = MaterialTheme.typography.bodyLarge)
-                Text("Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})", style = MaterialTheme.typography.bodyLarge)
-                Spacer(Modifier.height(32.dp))
-                Button(onClick = { started = true }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-                    Text("Начать проверку", style = MaterialTheme.typography.titleMedium)
-                }
-            }
-        }
-    } else if (targetProgress < 100) {
-        // Экран загрузки
-        Column(
-            modifier = Modifier.fillMaxSize().padding(top = 120.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+    Box(Modifier.fillMaxSize()) {
+        // Кнопка выхода (видна на всех экранах)
+        IconButton(
+            onClick = { activity.finish() },
+            modifier = Modifier
+                .padding(16.dp)
+                .size(44.dp) // Чуть меньше размер
+                .background(Color.White, CircleShape) // Белый фон
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(progress = { animatedProgress }, modifier = Modifier.size(200.dp), strokeWidth = 14.dp)
-                Text("${(animatedProgress * 100).toInt()}%", style = MaterialTheme.typography.displayLarge)
-            }
-            Spacer(Modifier.height(32.dp))
-            Text(currentStageText, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Выход",
+                tint = MaterialTheme.colorScheme.primary // Цвет как у кнопки "Повторить"
+            )
         }
-    } else {
-        // Экран результатов
-        Box(Modifier.fillMaxSize()) {
-            // Кнопка выхода (крестик) в левом верхнем углу
-            IconButton(
-                onClick = { activity.finish() }, // Закрывает приложение
-                modifier = Modifier
-                    .padding(16.dp)
-                    .size(40.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-            ) {
-                Icon(Icons.Default.Close, contentDescription = "Выход")
-            }
 
-            Column(Modifier.fillMaxSize().padding(top = 60.dp)) {
-                // Компактный блок с оценкой (слева круг, справа текст)
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                    verticalAlignment = Alignment.CenterVertically
+        Column(Modifier.fillMaxSize().padding(top = 60.dp)) {
+            if (!started) {
+                // Экран приветствия
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    val ringColor = when {
-                        score >= 80 -> Color(0xFF2E7D32)
-                        score >= 50 -> Color(0xFFF9A825)
-                        else -> Color(0xFFC62828)
+                    Text("SecurityChecker", style = MaterialTheme.typography.headlineMedium)
+                    Spacer(Modifier.height(16.dp))
+                    Text("Модель: ${Build.MANUFACTURER} ${Build.MODEL}", style = MaterialTheme.typography.bodyLarge)
+                    Text("Android: ${Build.VERSION.RELEASE}", style = MaterialTheme.typography.bodyLarge)
+                    Spacer(Modifier.height(32.dp))
+                    Button(onClick = { started = true }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
+                        Text("Начать проверку")
                     }
-
+                }
+            } else if (targetProgress < 100) {
+                // Экран загрузки
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
                     Box(contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(
-                            progress = { 1f },
-                            modifier = Modifier.size(110.dp), // Уменьшили круг
-                            strokeWidth = 10.dp,
-                            color = ringColor,
-                            trackColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("$score", style = MaterialTheme.typography.headlineLarge)
-                            Text(
-                                text = when { score >= 80 -> "Защищено"; score >= 50 -> "Внимание"; else -> "Опасно" },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = ringColor
+                        CircularProgressIndicator(progress = { animatedProgress }, modifier = Modifier.size(200.dp), strokeWidth = 14.dp)
+                        Text("${(animatedProgress * 100).toInt()}%", style = MaterialTheme.typography.displayLarge)
+                    }
+                    Spacer(Modifier.height(32.dp))
+                    Text(currentStageText, style = MaterialTheme.typography.titleMedium)
+                }
+            } else {
+                // Экран результатов
+                Column(Modifier.fillMaxSize()) {
+                    // Компактный блок с оценкой
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val ringColor = when {
+                            score >= 80 -> Color(0xFF2E7D32)
+                            score >= 50 -> Color(0xFFF9A825)
+                            else -> Color(0xFFC62828)
+                        }
+                        Box(contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(
+                                progress = { 1f },
+                                modifier = Modifier.size(110.dp),
+                                strokeWidth = 10.dp,
+                                color = ringColor,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant
                             )
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("$score", style = MaterialTheme.typography.headlineLarge)
+                                Text(
+                                    text = when { score >= 80 -> "Защищено"; score >= 50 -> "Внимание"; else -> "Опасно" },
+                                    style = MaterialTheme.typography.labelSmall, color = ringColor
+                                )
+                            }
+                        }
+                        Spacer(Modifier.width(20.dp))
+                        Column {
+                            Text("Средний балл", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                "Решите проблемы или пропустите неактуальные пункты.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Button(
+                                onClick = { started = false; targetProgress = 0; results = emptyList(); ignoredChecks = emptySet() },
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                            ) { Text("Повторить", style = MaterialTheme.typography.labelMedium) }
                         }
                     }
-                    
-                    Spacer(Modifier.width(20.dp))
-                    
-                    Column {
-                        Text("Средний балл безопасности", style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            "Решите проблемы в списке ниже или пропустите неактуальные пункты, чтобы повысить оценку.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Button(
-                            onClick = { 
-                                started = false; targetProgress = 0; results = emptyList(); ignoredChecks = emptySet()
-                            },
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                        ) { Text("Повторить", style = MaterialTheme.typography.labelMedium) }
-                    }
-                }
 
-                Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(16.dp))
 
-                LazyColumn(Modifier.weight(1f)) {
-                    items(results) { r ->
-                        CheckCard(
-                            result = r,
-                            isIgnored = r.id in ignoredChecks,
-                            onFix = { 
-                                activity.launchFix(r) {
-                                    ignoredChecks = ignoredChecks + r.id // Добавляем в игнорируемые
+                    LazyColumn(Modifier.weight(1f)) {
+                        items(results) { r ->
+                            CheckCard(
+                                result = r,
+                                isIgnored = r.id in ignoredChecks,
+                                onFix = { 
+                                    activity.launchFix(r) { ignoredChecks = ignoredChecks + r.id }
                                 }
-                            }
-                        )
+                            )
+                        }
+                        item { Spacer(Modifier.height(24.dp)) }
                     }
-                    item { Spacer(Modifier.height(24.dp)) }
                 }
             }
         }

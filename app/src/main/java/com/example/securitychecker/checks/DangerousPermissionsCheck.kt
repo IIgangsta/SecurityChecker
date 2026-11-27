@@ -14,12 +14,9 @@ object DangerousPermissionsCheck {
         val appsMap = mutableMapOf<String, AppPerms>()
 
         val targetPermissions = listOf(
-            android.Manifest.permission.RECEIVE_SMS,
-            android.Manifest.permission.READ_SMS,
-            android.Manifest.permission.SEND_SMS,
-            android.Manifest.permission.CAMERA,
-            android.Manifest.permission.SYSTEM_ALERT_WINDOW,
-            android.Manifest.permission.RECORD_AUDIO,
+            android.Manifest.permission.RECEIVE_SMS, android.Manifest.permission.READ_SMS,
+            android.Manifest.permission.SEND_SMS, android.Manifest.permission.CAMERA,
+            android.Manifest.permission.SYSTEM_ALERT_WINDOW, android.Manifest.permission.RECORD_AUDIO,
             android.Manifest.permission.CALL_PHONE
         )
 
@@ -30,7 +27,6 @@ object DangerousPermissionsCheck {
                     if (pkgInfo.packageName == context.packageName) continue
                     val appInfo = pkgInfo.applicationInfo ?: continue
                     if ((appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0) continue
-
                     val appName = appInfo.loadLabel(pm).toString()
                     val permName = when (perm) {
                         android.Manifest.permission.RECEIVE_SMS, android.Manifest.permission.READ_SMS -> "SMS"
@@ -41,7 +37,6 @@ object DangerousPermissionsCheck {
                         android.Manifest.permission.CALL_PHONE -> "Звонки"
                         else -> "Другое"
                     }
-
                     val appData = appsMap.getOrPut(pkgInfo.packageName) { AppPerms(pkgInfo.packageName, appName) }
                     if (!appData.permissions.contains(permName)) appData.permissions.add(permName)
                 }
@@ -54,9 +49,15 @@ object DangerousPermissionsCheck {
         }
 
         return if (details.isEmpty()) {
-            CheckResult("danger", title, CheckStatus.GREEN, "Опасных разрешений у сторонних приложений нет.", fixIntent = Intent(Settings.ACTION_APPLICATION_SETTINGS))
+            CheckResult("danger", title, CheckStatus.GREEN, "Опасных разрешений нет.")
         } else {
-            CheckResult("danger", title, CheckStatus.YELLOW, "Найдено ${details.size} приложений с опасными правами.", details.sorted(), Intent(Settings.ACTION_APPLICATION_SETTINGS))
+            CheckResult(
+                "danger", title, CheckStatus.YELLOW, 
+                "Найдено ${details.size} приложений с опасными правами.", 
+                details.sorted(), 
+                fixIntent = Intent(Settings.ACTION_APPLICATION_SETTINGS),
+                fixLabel = "Пропустить (я доверяю этим приложениям)" // <-- Добавили кнопку
+            )
         }
     }
 }
