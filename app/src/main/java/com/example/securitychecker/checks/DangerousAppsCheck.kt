@@ -13,11 +13,9 @@ object DangerousAppsCheck {
         val details = mutableListOf<String>()
 
         val dangerousPackages = mapOf(
-            "com.topjohnwu.magisk" to "Magisk (Root-менеджер)",
-            "eu.chainfire.supersu" to "SuperSU (Root-менеджер)",
-            "de.robv.android.xposed.installer" to "Xposed Installer (Модификация системы)",
-            "org.lsposed.manager" to "LSPosed (Модификация системы)",
-            "com.saurik.substrate" to "Cydia Substrate (Модификация системы)"
+            "com.topjohnwu.magisk" to "Magisk",
+            "eu.chainfire.supersu" to "SuperSU",
+            "de.robv.android.xposed.installer" to "Xposed"
         )
 
         for ((pkg, name) in dangerousPackages) {
@@ -28,14 +26,9 @@ object DangerousAppsCheck {
         }
 
         return if (details.isEmpty()) {
-            CheckResult("dangerous_apps", title, CheckStatus.GREEN, "Опасных приложений для модификации системы не найдено.")
+            CheckResult("dangerous_apps", title, CheckStatus.GREEN, "Опасных приложений не найдено.")
         } else {
-            CheckResult(
-                "dangerous_apps", title, CheckStatus.RED,
-                "Найдены приложения, которые могут снизить безопасность системы.",
-                details,
-                fixIntent = Intent(Settings.ACTION_APPLICATION_SETTINGS)
-            )
+            CheckResult("dangerous_apps", title, CheckStatus.RED, "Найдены приложения для модификации системы.", details, Intent(Settings.ACTION_APPLICATION_SETTINGS))
         }
     }
 }

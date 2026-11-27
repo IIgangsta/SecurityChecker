@@ -11,34 +11,23 @@ object RatCheck {
     fun run(context: Context): CheckResult {
         val title = "Удаленный доступ (RAT)"
         val pm = context.packageManager
-        
-        // Список известных легальных программ удаленного доступа (AnyDesk, TeamViewer и т.д.)
-        // Если они есть на телефоне, это не обязательно вирус, но требует внимания.
         val remoteAccessPackages = listOf(
             "com.anydesk.anydeskandroid",
             "com.teamviewer.teamviewer.market.mobile",
             "com.teamviewer.quicksupport.market",
-            "com.microsoft.rdc.androidx",
-            "com.parsecgaming.parsec",
-            "com.remotepc.rpcc",
-            "com.logmein.rescue"
+            "com.microsoft.rdc.androidx"
         )
 
         val details = mutableListOf<String>()
-        
-        // 1. Проверяем наличие известных легальных RAT-приложений
         for (pkg in remoteAccessPackages) {
             try {
                 val appInfo = pm.getApplicationInfo(pkg, 0)
-                val name = pm.getApplicationLabel(appInfo).toString()
-                details.add("• $name ($pkg)")
+                details.add("• ${pm.getApplicationLabel(appInfo)} ($pkg)")
             } catch (_: Exception) {}
         }
 
-        // 2. Проверяем спецвозможности (так как RAT часто их использует)
         val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
         val enabledServices = am.getEnabledAccessibilityServiceList(android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
-        
         val thirdPartyServices = enabledServices.filter {
             val app = it.resolveInfo?.serviceInfo?.applicationInfo
             app != null && (app.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) == 0
@@ -49,14 +38,9 @@ object RatCheck {
         }
 
         return if (details.isEmpty()) {
-            CheckResult("rat", title, CheckStatus.GREEN, "Приложения удаленного доступа и активные сторонние спецвозможности не обнаружены.")
+            CheckResult("rat", title, CheckStatus.GREEN, "Приложения удаленного доступа не обнаружены.")
         } else {
-            CheckResult(
-                "rat", title, CheckStatus.RED,
-                "Обнаружены признаки приложений удаленного доступа или активных спецвозможностей. Проверьте список.",
-                details,
-                fixIntent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-            )
+            CheckResult("rat", title, CheckStatus.RED, "Обнаружены признаки приложений удаленного доступа.", details, Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
     }
 }
