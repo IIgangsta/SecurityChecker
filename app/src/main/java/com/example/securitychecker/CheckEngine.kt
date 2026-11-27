@@ -9,7 +9,7 @@ object CheckEngine {
         SecurityPatchCheck.run(context),
         AccessibilityCheck.run(context),
         DeviceAdminCheck.run(context),
-        UnknownSourcesCheck.run(context),
+        UnknownSourcesCheck.run(context), // <-- Включаем обратно
         AndroidVersionCheck.run(context),
         DangerousPermissionsCheck.run(context)
     )
