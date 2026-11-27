@@ -23,7 +23,6 @@ fun CheckCard(result: CheckResult, isIgnored: Boolean, onFix: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    // Если пропущено, красим в серый/зеленый, иначе по статусу
     val color = if (isIgnored) Color(0xFF757575) else when (result.status) {
         CheckStatus.GREEN -> Color(0xFF2E7D32)
         CheckStatus.YELLOW -> Color(0xFFF9A825)
@@ -72,13 +71,29 @@ fun CheckCard(result: CheckResult, isIgnored: Boolean, onFix: () -> Unit) {
                             Text(text, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 2.dp))
                         }
                     }
+                    
+                    // Кнопка "Пропустить" появляется ТОЛЬКО после разворота
+                    if (result.fixLabel.contains("Пропустить")) {
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = onFix,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = color)
+                        ) {
+                            Text(result.fixLabel)
+                        }
+                    }
                 }
             }
 
+            // Основная кнопка (Исправить / Пропустить для патча и версии)
             if (result.fixIntent != null && !isIgnored) {
-                Spacer(Modifier.height(8.dp))
-                Button(onClick = onFix, colors = ButtonDefaults.buttonColors(containerColor = color)) {
-                    Text(result.fixLabel)
+                val showOutside = !result.fixLabel.contains("Пропустить") || result.details.isEmpty()
+                if (showOutside) {
+                    Spacer(Modifier.height(8.dp))
+                    Button(onClick = onFix, colors = ButtonDefaults.buttonColors(containerColor = color)) {
+                        Text(result.fixLabel)
+                    }
                 }
             }
         }

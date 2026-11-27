@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -59,6 +60,8 @@ fun SecurityCheckerScreen(activity: MainActivity) {
     var targetProgress by remember { mutableIntStateOf(0) }
     var results by remember { mutableStateOf<List<CheckResult>>(emptyList()) }
     var currentStageText by remember { mutableStateOf("Инициализация...") }
+    
+    // Список игнорируемых проверок
     var ignoredChecks by remember { mutableStateOf(setOf<String>()) }
 
     val animatedProgress by animateFloatAsState(targetValue = targetProgress / 100f, animationSpec = tween(300), label = "Progress")
@@ -76,6 +79,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
         }
     }
 
+    // Подсчет оценки с учетом пропущенных
     val score = remember(results, ignoredChecks) {
         if (results.isEmpty()) 0
         else {
@@ -101,13 +105,15 @@ fun SecurityCheckerScreen(activity: MainActivity) {
             onClick = { activity.finish() },
             modifier = Modifier
                 .padding(16.dp)
-                .size(44.dp) // Чуть меньше размер
-                .background(Color.White, CircleShape) // Белый фон
+                .size(36.dp) // Уменьшенный размер
+                .background(Color.White, CircleShape)
+                .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape) // Обводка
         ) {
             Icon(
                 imageVector = Icons.Default.Close,
                 contentDescription = "Выход",
-                tint = MaterialTheme.colorScheme.primary // Цвет как у кнопки "Повторить"
+                tint = MaterialTheme.colorScheme.primary, // Цвет крестика
+                modifier = Modifier.size(20.dp)
             )
         }
 

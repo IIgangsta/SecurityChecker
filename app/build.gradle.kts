@@ -8,12 +8,19 @@ android {
     namespace = "com.example.securitychecker"
     compileSdk = 34
 
-    defaultConfig {
+        defaultConfig {
         applicationId = "com.example.securitychecker"
         minSdk = 26
         targetSdk = 34
-        versionCode = 10
-        versionName = "1.0.8"
+        
+        // Автоматическая генерация версии на основе текущей даты и времени
+        // Формат versionName: 1.0.YYMMDD (например, 1.0.261127)
+        // Формат versionCode: ГГММДДЧЧ (например, 26112715)
+        val date = java.text.SimpleDateFormat("yyMMddHH", java.util.Locale.US).format(java.util.Date())
+        val yearMonthDay = date.substring(0, 6) // yyMMdd
+        
+        versionCode = date.toInt() // Всегда уникальный номер
+        versionName = "1.0.$yearMonthDay" // Красивая версия для пользователя
     }
 
     buildTypes {
