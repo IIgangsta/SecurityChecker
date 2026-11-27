@@ -9,7 +9,7 @@ import com.example.securitychecker.models.CheckResult
 import com.example.securitychecker.models.CheckStatus
 
 object UnknownSourcesCheck {
-    private const val OPSTR = AppOpsManager.OPSTR_REQUEST_INSTALL_PACKAGES
+    private const val OPSTR = "android:request_install_packages"
 
     fun run(context: Context): CheckResult {
         val title = "Установка из неизвестных источников"
