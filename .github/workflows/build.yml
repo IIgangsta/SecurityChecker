@@ -23,7 +23,10 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           packages: 'platform-tools'
-
+ - name: Download Gradle Wrapper Jar
+        run: |
+          mkdir -p gradle/wrapper
+          curl -L -o gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradle/wrapper/gradle-wrapper.jar
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
