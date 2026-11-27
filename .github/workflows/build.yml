@@ -21,10 +21,7 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-      - name: Generate Icon
-        run: |
-          pip install Pillow
-          python generate_icon.py
+      
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
 
