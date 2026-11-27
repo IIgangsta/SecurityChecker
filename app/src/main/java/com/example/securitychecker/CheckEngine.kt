@@ -9,8 +9,16 @@ object CheckEngine {
         SecurityPatchCheck.run(context),
         AccessibilityCheck.run(context),
         DeviceAdminCheck.run(context),
-        UnknownSourcesCheck.run(context), // <-- Включаем обратно
+        UnknownSourcesCheck.run(context),
         AndroidVersionCheck.run(context),
-        DangerousPermissionsCheck.run(context)
+        DangerousPermissionsCheck.run(context),
+        RootCheck.run(context),
+        ScreenLockCheck.run(context),
+        DeveloperOptionsCheck.run(context),
+        VpnCheck.run(context),
+        // Новые проверки
+        DangerousAppsCheck.run(context),
+        DeviceOwnerCheck.run(context),
+        RatCheck.run(context)
     )
 }

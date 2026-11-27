@@ -57,24 +57,41 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SecurityCheckerScreen(activity: MainActivity) {
     var started by remember { mutableStateOf(false) }
-    var targetProgress by remember { mutableIntStateOf(0) }
     var results by remember { mutableStateOf<List<CheckResult>>(emptyList()) }
     var currentStageText by remember { mutableStateOf("Инициализация...") }
-    
     var ignoredChecks by remember { mutableStateOf(setOf<String>()) }
 
-    val animatedProgress by animateFloatAsState(targetValue = targetProgress / 100f, animationSpec = tween(300), label = "Progress")
+    // Используем Animatable для супер-плавной анимации
+    val progressAnim = remember { Animatable(0f) }
 
     LaunchedEffect(started) {
-        if (started && targetProgress == 0) {
-            val stages = listOf("Патч...", "Спецвозможности...", "Администраторы...", "Источники...", "Версия...", "Разрешения...")
+        if (started) {
+            // Сбрасываем анимацию при новом запуске
+            progressAnim.snapTo(0f)
+            
+            val stages = listOf(
+                "Патч...", "Спецвозможности...", "Администраторы...", 
+                "Источники...", "Версия...", "Разрешения...",
+                "Root-права...", "Блокировка...", "Отладка...",
+                "VPN...", "Опасные приложения...", "Владелец...", "RAT..."
+            )
+            
+            // Сначала собираем результаты (это быстро)
             val allResults = CheckEngine.runAll(activity)
-            for (i in stages.indices) {
-                currentStageText = stages[i]
-                delay(350)
-                targetProgress = ((i + 1) * 100) / stages.size
-            }
             results = allResults
+
+            // Теперь плавно проигрываем анимацию и меняем текст
+            val totalSteps = stages.size
+            for (i in 0 until totalSteps) {
+                currentStageText = stages[i]
+                // Анимируем от текущего значения до следующего шага
+                // 2000f — это скорость анимации (чем больше, тем плавнее и дольше)
+                progressAnim.animateTo(
+                    targetValue = (i + 1).toFloat() / totalSteps,
+                    animationSpec = tween(durationMillis = 200, easing = LinearEasing)
+                )
+                delay(50) // Небольшая пауза между этапами для читаемости
+            }
         }
     }
 
@@ -98,12 +115,12 @@ fun SecurityCheckerScreen(activity: MainActivity) {
     }
 
     Box(Modifier.fillMaxSize()) {
-        // Кнопка выхода (видна на всех экранах) - УМЕНЬШЕНА
+        // Кнопка выхода
         IconButton(
             onClick = { activity.finish() },
             modifier = Modifier
                 .padding(12.dp)
-                .size(28.dp) // 28dp
+                .size(28.dp)
                 .background(Color.White, CircleShape)
                 .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)
         ) {
@@ -111,12 +128,13 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                 imageVector = Icons.Default.Close,
                 contentDescription = "Выход",
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(14.dp) // 14dp
+                modifier = Modifier.size(14.dp)
             )
         }
 
         Column(Modifier.fillMaxSize().padding(top = 60.dp)) {
             if (!started) {
+                // Экран приветствия
                 Column(
                     modifier = Modifier.fillMaxSize().padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -131,20 +149,29 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                         Text("Начать проверку")
                     }
                 }
-            } else if (targetProgress < 100) {
+            } else if (progressAnim.value < 0.99f) {
+                // Экран загрузки с плавным кругом
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(progress = { animatedProgress }, modifier = Modifier.size(200.dp), strokeWidth = 14.dp)
-                        Text("${(animatedProgress * 100).toInt()}%", style = MaterialTheme.typography.displayLarge)
+                        CircularProgressIndicator(
+                            progress = { progressAnim.value }, // Передаем анимированное значение
+                            modifier = Modifier.size(200.dp), 
+                            strokeWidth = 14.dp
+                        )
+                        Text(
+                            "${(progressAnim.value * 100).toInt()}%", 
+                            style = MaterialTheme.typography.displayLarge
+                        )
                     }
                     Spacer(Modifier.height(32.dp))
                     Text(currentStageText, style = MaterialTheme.typography.titleMedium)
                 }
             } else {
+                // Экран результатов
                 Column(Modifier.fillMaxSize()) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
@@ -181,7 +208,11 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                             )
                             Spacer(Modifier.height(8.dp))
                             Button(
-                                onClick = { started = false; targetProgress = 0; results = emptyList(); ignoredChecks = emptySet() },
+                                onClick = { 
+                                    started = false
+                                    // Сбрасываем анимацию в фоне, чтобы при следующем запуске все было ок
+                                    ignoredChecks = emptySet()
+                                },
                                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                             ) { Text("Повторить", style = MaterialTheme.typography.labelMedium) }
                         }
