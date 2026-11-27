@@ -61,7 +61,6 @@ fun SecurityCheckerScreen(activity: MainActivity) {
     var results by remember { mutableStateOf<List<CheckResult>>(emptyList()) }
     var currentStageText by remember { mutableStateOf("Инициализация...") }
     
-    // Список игнорируемых проверок
     var ignoredChecks by remember { mutableStateOf(setOf<String>()) }
 
     val animatedProgress by animateFloatAsState(targetValue = targetProgress / 100f, animationSpec = tween(300), label = "Progress")
@@ -79,7 +78,6 @@ fun SecurityCheckerScreen(activity: MainActivity) {
         }
     }
 
-    // Подсчет оценки с учетом пропущенных
     val score = remember(results, ignoredChecks) {
         if (results.isEmpty()) 0
         else {
@@ -100,26 +98,25 @@ fun SecurityCheckerScreen(activity: MainActivity) {
     }
 
     Box(Modifier.fillMaxSize()) {
-        // Кнопка выхода (видна на всех экранах)
+        // Кнопка выхода (видна на всех экранах) - УМЕНЬШЕНА
         IconButton(
             onClick = { activity.finish() },
             modifier = Modifier
-                .padding(16.dp)
-                .size(36.dp) // Уменьшенный размер
+                .padding(12.dp)
+                .size(28.dp) // 28dp
                 .background(Color.White, CircleShape)
-                .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape) // Обводка
+                .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)
         ) {
             Icon(
                 imageVector = Icons.Default.Close,
                 contentDescription = "Выход",
-                tint = MaterialTheme.colorScheme.primary, // Цвет крестика
-                modifier = Modifier.size(20.dp)
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(14.dp) // 14dp
             )
         }
 
         Column(Modifier.fillMaxSize().padding(top = 60.dp)) {
             if (!started) {
-                // Экран приветствия
                 Column(
                     modifier = Modifier.fillMaxSize().padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -135,7 +132,6 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                     }
                 }
             } else if (targetProgress < 100) {
-                // Экран загрузки
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -149,9 +145,7 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                     Text(currentStageText, style = MaterialTheme.typography.titleMedium)
                 }
             } else {
-                // Экран результатов
                 Column(Modifier.fillMaxSize()) {
-                    // Компактный блок с оценкой
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                         verticalAlignment = Alignment.CenterVertically

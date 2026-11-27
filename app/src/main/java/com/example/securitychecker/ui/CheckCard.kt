@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.securitychecker.models.CheckResult
 import com.example.securitychecker.models.CheckStatus
@@ -75,24 +76,30 @@ fun CheckCard(result: CheckResult, isIgnored: Boolean, onFix: () -> Unit) {
                     // Кнопка "Пропустить" появляется ТОЛЬКО после разворота
                     if (result.fixLabel.contains("Пропустить")) {
                         Spacer(Modifier.height(8.dp))
-                        OutlinedButton(
+                        Button(
                             onClick = onFix,
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = color)
+                            colors = ButtonDefaults.buttonColors(containerColor = color) // Оранжевый фон
                         ) {
-                            Text(result.fixLabel)
+                            // Перенос строки для скобок
+                            val formattedLabel = result.fixLabel.replace(" (", "\n(")
+                            Text(
+                                text = formattedLabel,
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.labelLarge
+                            )
                         }
                     }
                 }
             }
 
-            // Основная кнопка (Исправить / Пропустить для патча и версии)
             if (result.fixIntent != null && !isIgnored) {
                 val showOutside = !result.fixLabel.contains("Пропустить") || result.details.isEmpty()
                 if (showOutside) {
                     Spacer(Modifier.height(8.dp))
                     Button(onClick = onFix, colors = ButtonDefaults.buttonColors(containerColor = color)) {
-                        Text(result.fixLabel)
+                        val formattedLabel = result.fixLabel.replace(" (", "\n(")
+                        Text(text = formattedLabel, textAlign = TextAlign.Center)
                     }
                 }
             }
