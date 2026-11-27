@@ -18,7 +18,7 @@ object DeviceAdminCheck {
         if (admins.isEmpty()) return CheckResult("admin", title, CheckStatus.GREEN, "Нет активных администраторов.", fixIntent = Intent(Settings.ACTION_SECURITY_SETTINGS))
 
         val known = setOf("com.google.android.gms", "com.google.android.apps.adm", "com.huawei.android.finddevice")
-        val details = admins.map { "• ${it.loadLabel(context.packageManager)} (${it.packageName})" }
+        val details = admins.map { "• ${it.packageName}" }
         val unknown = admins.filter { it.packageName !in known }
 
         val status = if (unknown.isEmpty()) CheckStatus.GREEN else CheckStatus.YELLOW
