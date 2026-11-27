@@ -1,6 +1,5 @@
 package com.example.securitychecker
 
-import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.os.Build
 import android.os.Bundle
@@ -10,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,9 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.example.securitychecker.models.CheckResult
 import com.example.securitychecker.models.CheckStatus
 import com.example.securitychecker.ui.CheckCard
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,10 +73,8 @@ fun SecurityCheckerScreen(activity: MainActivity) {
                 "VPN...", "Опасные приложения...", "Владелец...", "RAT..."
             )
             
-            // ВЫНОСИМ ТЯЖЕЛЫЕ ПРОВЕРКИ В ФОНОВЫЙ ПОТОК
-            val allResults = withContext(Dispatchers.IO) {
-                CheckEngine.runAll(activity)
-            }
+            // Проверки теперь безопасные, вызываем в основном потоке
+            val allResults = CheckEngine.runAll(activity)
             results = allResults
 
             val totalSteps = stages.size
@@ -113,24 +109,25 @@ fun SecurityCheckerScreen(activity: MainActivity) {
     }
 
     Box(Modifier.fillMaxSize()) {
-        // Кнопка выхода (УМЕНЬШИЛИ ДИАМЕТР ДО 24, обводка 1dp, крестик 14dp)
-        IconButton(
-            onClick = { activity.finish() },
+        // Идеально круглая кнопка закрытия
+        Box(
             modifier = Modifier
-                .padding(12.dp)
-                .size(24.dp)
+                .padding(16.dp)
+                .size(32.dp)
                 .background(Color.White, CircleShape)
                 .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                .clickable { activity.finish() },
+            contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.Close,
                 contentDescription = "Выход",
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(14.dp)
+                modifier = Modifier.size(18.dp)
             )
         }
 
-        Column(Modifier.fillMaxSize().padding(top = 60.dp)) {
+        Column(Modifier.fillMaxSize().padding(top = 70.dp)) {
             if (!started) {
                 Column(
                     modifier = Modifier.fillMaxSize().padding(24.dp),
