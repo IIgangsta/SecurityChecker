@@ -12,61 +12,58 @@ object DangerousPermissionsCheck {
         val pm = context.packageManager
         val details = mutableListOf<String>()
 
-        // Список разрешений, которые мы ищем
         val targetPermissions = listOf(
             android.Manifest.permission.RECEIVE_SMS,
             android.Manifest.permission.READ_SMS,
             android.Manifest.permission.SEND_SMS,
             android.Manifest.permission.CAMERA,
-            android.Manifest.permission.SYSTEM_ALERT_WINDOW
+            android.Manifest.permission.SYSTEM_ALERT_WINDOW,
+            android.Manifest.permission.ACCESS_FINE_LOCATION,
+            android.Manifest.permission.ACCESS_COARSE_LOCATION
         )
 
         for (perm in targetPermissions) {
             try {
-                // Ищем ВСЕ приложения, которым выдано это разрешение (самый надежный метод)
                 val packages = pm.getPackagesHoldingPermissions(arrayOf(perm), 0)
                 
                 for (pkgInfo in packages) {
-                    // Пропускаем саму себя
                     if (pkgInfo.packageName == context.packageName) continue
                     
                     val appInfo = pkgInfo.applicationInfo ?: continue
-                    
-                    // Пропускаем системные приложения (чтобы не пугать пользователя)
                     if ((appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0) continue
 
                     val appName = appInfo.loadLabel(pm).toString()
                     
-                    // Переводим техническое название разрешения на русский
                     val permName = when (perm) {
                         android.Manifest.permission.RECEIVE_SMS -> "Прием SMS"
                         android.Manifest.permission.READ_SMS -> "Чтение SMS"
                         android.Manifest.permission.SEND_SMS -> "Отправка SMS"
                         android.Manifest.permission.CAMERA -> "Камера"
                         android.Manifest.permission.SYSTEM_ALERT_WINDOW -> "Поверх окон"
+                        android.Manifest.permission.ACCESS_FINE_LOCATION -> "Геолокация (точная)"
+                        android.Manifest.permission.ACCESS_COARSE_LOCATION -> "Геолокация (примерная)"
                         else -> "Другое"
                     }
 
-                    details.add("• $appName ($permName)")
+                    // Формат: "Имя приложения|Пакет|Разрешение"
+                    details.add("• $appName ($permName)||${pkgInfo.packageName}")
                 }
-            } catch (_: Throwable) {
-                // Игнорируем ошибки, если система заблокирует доступ к конкретному пакету
-            }
+            } catch (_: Throwable) {}
         }
 
-        // Убираем дубликаты (если приложение имеет и чтение, и отправку SMS)
-        val uniqueDetails = details.distinct()
+        // Убираем дубликаты по имени пакета и разрешению
+        val uniqueDetails = details.distinctBy { it.split("||")[0] + it.split("||")[1] }
 
         return if (uniqueDetails.isEmpty()) {
             CheckResult(
                 "danger", title, CheckStatus.GREEN,
-                "У сторонних приложений нет доступа к SMS, камере или экрану.",
+                "У сторонних приложений нет доступа к SMS, камере или геолокации.",
                 fixIntent = Intent(Settings.ACTION_APPLICATION_SETTINGS)
             )
         } else {
             CheckResult(
                 "danger", title, CheckStatus.YELLOW,
-                "Найдено ${uniqueDetails.size} разрешений у сторонних приложений. Проверьте список.",
+                "Найдено ${uniqueDetails.size} разрешений. Нажмите на приложение, чтобы открыть его настройки.",
                 uniqueDetails,
                 Intent(Settings.ACTION_APPLICATION_SETTINGS)
             )

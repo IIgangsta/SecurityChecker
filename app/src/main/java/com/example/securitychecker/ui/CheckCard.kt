@@ -1,6 +1,10 @@
 package com.example.securitychecker.ui
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -8,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.securitychecker.models.CheckResult
@@ -16,6 +21,8 @@ import com.example.securitychecker.models.CheckStatus
 @Composable
 fun CheckCard(result: CheckResult, onFix: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
     val color = when (result.status) {
         CheckStatus.GREEN -> Color(0xFF2E7D32)
         CheckStatus.YELLOW -> Color(0xFFF9A825)
@@ -41,7 +48,30 @@ fun CheckCard(result: CheckResult, onFix: () -> Unit) {
                     Text(if (expanded) "Свернуть" else "Показать детали")
                 }
                 if (expanded) {
-                    result.details.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    result.details.forEach { detail ->
+                        val parts = detail.split("||")
+                        val text = parts[0]
+                        val pkgName = if (parts.size > 1) parts[1] else ""
+
+                        if (pkgName.isNotEmpty()) {
+                            // Кликабельный текст для открытия настроек приложения
+                            Text(
+                                text = text,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                        intent.data = Uri.parse("package:$pkgName")
+                                        context.startActivity(intent)
+                                    }
+                                    .padding(vertical = 4.dp)
+                            )
+                        } else {
+                            // Обычный текст (для других проверок)
+                            Text(text, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 2.dp))
+                        }
+                    }
                 }
             }
 
